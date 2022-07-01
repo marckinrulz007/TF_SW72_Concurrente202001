@@ -171,24 +171,20 @@ func send(remote string, frame Frame, callback func(net.Conn)) bool {
 	}
 }
 
-func createCSV(port string, msg string, hash string) {
-	empData := [][]string{
-		{port, msg, hash},
-	}
+func createCSV(id string, hash string, previous_hash string) {
+	var empData [][]string
 
-	csvFile, err := os.Create("data.csv")
+	csvFile, err := os.OpenFile("data.csv", os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 
 	if err != nil {
 		log.Fatalf("failed creating file: %s", err)
 	}
 
-	csvwriter := csv.NewWriter(csvFile)
+	defer csvFile.Close()
 
-	for _, empRow := range empData {
-		_ = csvwriter.Write(empRow)
-	}
-	csvwriter.Flush()
-	csvFile.Close()
+	empData = append(empData, []string{id, hash, previous_hash})
+	csvwriter := csv.NewWriter(csvFile)
+	csvwriter.WriteAll(empData)
 }
 
 func ReadCSVFromHttpRequest(res http.ResponseWriter, req *http.Request) {
