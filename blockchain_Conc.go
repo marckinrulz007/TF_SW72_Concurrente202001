@@ -52,7 +52,6 @@ var (
 )
 
 func main() {
-	HandleRequest()
 	rand.Seed(time.Now().UnixNano())
 	if len(os.Args) == 1 {
 		log.Println("Hostname not given")
@@ -83,7 +82,7 @@ func main() {
 			}
 
 			fmt.Println("\t\t\t", contenido)
-
+			createCSV(strconv.Itoa(contenido), string(bloque_after.hash[:]), string(bloque_after.hash[:]))
 		}
 
 		chRemotes <- []string{}
@@ -102,6 +101,7 @@ func main() {
 		server()
 	}
 	//datos de prueba de los bloques 1 2 y 3
+	HandleRequest()
 
 }
 
@@ -148,7 +148,6 @@ func send(remote string, frame Frame, callback func(net.Conn)) bool {
 		enc := json.NewEncoder(cn)
 		enc.Encode(frame)
 
-		createCSV("", "", "")
 		if callback != nil {
 			callback(cn)
 		}
@@ -220,8 +219,6 @@ func ReadCSVFromHttpRequest(res http.ResponseWriter, req *http.Request) {
 func HandleRequest() {
 	var port = "9000"
 	http.HandleFunc("/data", ReadCSVFromHttpRequest)
-	fmt.Printf("Corriendo desde el puerto :%s\n", port)
-	fmt.Printf("Llamar al dataset localhost:%s/data\n", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
