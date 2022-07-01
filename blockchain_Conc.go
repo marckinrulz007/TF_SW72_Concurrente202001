@@ -1,11 +1,14 @@
 package main
 
 import (
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"math/rand"
 	"net"
+	"net/http"
 	"os"
 	"strconv"
 	"strings"
@@ -49,7 +52,7 @@ var (
 )
 
 func main() {
-
+	HandleRequest()
 	rand.Seed(time.Now().UnixNano())
 	if len(os.Args) == 1 {
 		log.Println("Hostname not given")
@@ -144,6 +147,8 @@ func send(remote string, frame Frame, callback func(net.Conn)) bool {
 		defer cn.Close()
 		enc := json.NewEncoder(cn)
 		enc.Encode(frame)
+
+		createCSV("", "", "")
 		if callback != nil {
 			callback(cn)
 		}
@@ -165,6 +170,59 @@ func send(remote string, frame Frame, callback func(net.Conn)) bool {
 		chRemotes <- remotes
 		return false
 	}
+}
+
+func createCSV(port string, msg string, hash string) {
+	empData := [][]string{
+		{port, msg, hash},
+	}
+
+	csvFile, err := os.Create("data.csv")
+
+	if err != nil {
+		log.Fatalf("failed creating file: %s", err)
+	}
+
+	csvwriter := csv.NewWriter(csvFile)
+
+	for _, empRow := range empData {
+		_ = csvwriter.Write(empRow)
+	}
+	csvwriter.Flush()
+	csvFile.Close()
+}
+
+func ReadCSVFromHttpRequest(res http.ResponseWriter, req *http.Request) {
+
+	file, err := os.Open("./data.csv")
+	if err != nil {
+		log.Fatal("Unable to read input", err)
+	}
+	reader := csv.NewReader(file)
+	var results [][]string
+	for {
+		// read one row from csv
+		record, err := reader.Read()
+		if err == io.EOF {
+			break
+		}
+		// add record to result set
+		results = append(results, record)
+	}
+
+	res.Header().Set("Content-Type", "application/json; charset=utf-8")
+	res.Header().Set("Access-Control-Allow-Origin", "*")
+	res.Header().Set("Access-Control-Allow-Headers", "Content-Type,access-control-allow-origin, access-control-allow-headers")
+	jsonBytes, _ := json.MarshalIndent(results, "", " ")
+	io.WriteString(res, string(jsonBytes))
+}
+
+func HandleRequest() {
+	var port = "9000"
+	http.HandleFunc("/data", ReadCSVFromHttpRequest)
+	fmt.Printf("Corriendo desde el puerto :%s\n", port)
+	fmt.Printf("Llamar al dataset localhost:%s/data\n", port)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
 
 func server() {
