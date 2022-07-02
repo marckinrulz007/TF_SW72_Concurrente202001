@@ -173,7 +173,7 @@ func send(remote string, frame Frame, callback func(net.Conn)) bool {
 
 func createCSV(id string, hash string, previous_hash string) {
 	var empData [][]string
-
+	currentTime := time.Now()
 	csvFile, err := os.OpenFile("data.csv", os.O_APPEND|os.O_WRONLY, os.ModeAppend)
 
 	if err != nil {
@@ -182,7 +182,7 @@ func createCSV(id string, hash string, previous_hash string) {
 
 	defer csvFile.Close()
 
-	empData = append(empData, []string{id, hash, previous_hash})
+	empData = append(empData, []string{id, hash, previous_hash, currentTime.String()})
 	csvwriter := csv.NewWriter(csvFile)
 	csvwriter.WriteAll(empData)
 }

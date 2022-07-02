@@ -18,9 +18,10 @@ export default {
     return {
       displayData: [],
       headers: [
-        { text: "Puerto", value: "port" },
+        { text: "Id", value: "id" },
         { text: "Hash", value: "hash" },
         { text: "Hash previo", value: "previous_hash" },
+        { text: "Tiempo", value: "time" },
       ],
     };
   },
@@ -32,9 +33,10 @@ export default {
           const data = response.data;
           for (const item of data) {
             result.push({
-              port: item[0],
+              id: item[0],
               hash: item[1],
               previous_hash: item[2],
+              time: this.fixDates(item[3]),
             });
           }
           this.displayData = result;
@@ -43,6 +45,12 @@ export default {
           console.log(e);
         });
     },
+    fixDates(string){
+      const parts = string.split(" ");
+      const date = parts[0].split("-");
+      const time = parts[1];
+      return `${date[2]}/${date[1]}/${date[0]} ${time.slice(0,5)}`;
+    }
   },
   mounted() {
     this.getAllData();
