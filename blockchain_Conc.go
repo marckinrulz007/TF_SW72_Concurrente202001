@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/csv"
 	"encoding/json"
 	"fmt"
@@ -11,10 +12,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 type Frame struct {
@@ -417,17 +415,20 @@ func Blocks(operacion []string, prev_hash []byte) *Block {
 		timestamp: currentTime,
 		operacion: operacion,
 		prev_hash: prev_hash,
-		hash:      NewHash(),
+		hash:      NewHash(currentTime, operacion, prev_hash),
 	}
 
 }
 
 //funcion de encriptado
 //https://golangbyexample.com/generate-uuid-guid-golang/
-func NewHash() []byte {
-	uuidWithHyphen := uuid.New()
-	uuid := strings.Replace(uuidWithHyphen.String(), "-", "", -1)
-	return []byte(uuid)
+func NewHash(time time.Time, operacion []string, prev_hash []byte) []byte {
+	input := append(prev_hash, time.String()...)
+	for operacion := range operacion {
+		input = append(input, string(rune(operacion))...)
+	}
+	hash := sha256.Sum256(input)
+	return hash[:]
 }
 
 //pinta los bloques
